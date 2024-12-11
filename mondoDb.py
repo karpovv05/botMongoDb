@@ -118,6 +118,8 @@ def insertBase(jsNewData:dict):
         if phoneNew and phoneNew not in tgIdDb["phone"]:
             tgIdDb["phone"].append(phoneNew)
             logger.info(f"insertBase phone добавлен")
+            if phoneDb:
+              pass
 
         if emailNew and emailNew not in tgIdDb["email"]:
               tgIdDb["email"].append(emailNew)
