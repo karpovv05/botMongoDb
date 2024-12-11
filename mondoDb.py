@@ -12,7 +12,6 @@ logger = setup_logger("mongoDb")
 
 
 
-
 def checkKeyInNewJs(jsNewData:dict):
   logger.info(f"Вызов метода getKey с данными {jsNewData}")
   try:
@@ -21,7 +20,7 @@ def checkKeyInNewJs(jsNewData:dict):
     elif jsNewData.get("email"): return "email"
     else: return False
   except Exception as ex:
-    logger.error(f"{ex}")
+    logger.error(ex)
 
 def getKeyParamsFromNewJs(jsNewData:dict):
   try:
@@ -39,7 +38,7 @@ def getKeyParamsFromNewJs(jsNewData:dict):
       listParams.append("bizon365")
     return listParams
   except Exception as ex:
-    logger.error(f"{ex}")
+    logger.error(ex)
   
 def insertParams(jsNewData:dict,mainType):
   try:
@@ -74,7 +73,7 @@ def insertParams(jsNewData:dict,mainType):
     collection.update_one({mainType:jsNewData[mainType]},{"$set":findData})
     logger.info(f"Данные добавлены в базу данных")
   except Exception as ex:
-    logger.error(f"{ex}")
+    logger.error(ex)
 
 
 def insertBase(jsNewData:dict):
@@ -91,7 +90,6 @@ def insertBase(jsNewData:dict):
           "salebot": [],
           "bizon365": []
         }
-    # mongoData = collection.find({})
     try:  
       tgIdNew = jsNewData.get("tgId")
       phoneNew = jsNewData.get("phone")
@@ -118,8 +116,12 @@ def insertBase(jsNewData:dict):
         if phoneNew and phoneNew not in tgIdDb["phone"]:
             tgIdDb["phone"].append(phoneNew)
             logger.info(f"insertBase phone добавлен")
-            if phoneDb:
-              pass
+            
+            if phoneDb and not phoneDb["tgId"]:
+              logger.info(f"insertBase найден Дубль по Телефону")
+              tgIdDb = antiDuble(tgIdDb,phoneDb,"phone")
+              
+              
 
         if emailNew and emailNew not in tgIdDb["email"]:
               tgIdDb["email"].append(emailNew)
@@ -210,7 +212,7 @@ def insertBase(jsNewData:dict):
 
         collection.insert_one(js)
     except Exception as ex:
-        logger.error(f"{ex}")
+        logger.error(ex)
 
 def allProcess(jsNewData:dict):
   try:
@@ -219,7 +221,7 @@ def allProcess(jsNewData:dict):
     mainType = checkKeyInNewJs(jsNewData)
     insertParams(jsNewData,mainType)
   except Exception:
-    logger.error(f"{Exception}")
+    logger.error(Exception)
   
   
 def makeInCorrectJson(data:dict,key:str)->dict:
@@ -257,7 +259,7 @@ def makeInCorrectJson(data:dict,key:str)->dict:
       logger.info(f"makeInCorrectJson вернул {newDict}")
       return newDict
     except Exception:
-      logger.error(f"{Exception}")
+      logger.error(Exception)
   
 
 def getData():
@@ -266,3 +268,29 @@ def getData():
 
 def delData():
   collection.delete_many({})
+  
+  
+def antiDuble(tgIdDb,dubleDb,attr):
+  try:
+    if attr == "phone":
+      for i in dubleDb.items():
+          if i[1] and i[0] == "getcourse" and i[1]:
+              if i[1]["user_info"]:
+                  tgIdDb["getcourse"]["userInfo"] = i[1]["user_info"]
+              if i[1]["deals"]:
+                  for i2 in i[1]["deals"]:
+                      tgIdDb["getcourse"]["deals"].append(i2)
+          elif i[0] not in ["tgId","phone","email","_id"]:
+            for data in i[1]:
+                  tgIdDb[i[0]].append(data)
+      for phone in dubleDb["phone"]:
+        tgIdDb["phone"].append(phone)
+      if dubleDb["email"]:
+        for email in dubleDb["email"]:
+          tgIdDb["email"].append(email) 
+      collection.delete_many({"phone": dubleDb["phone"]})
+      return tgIdDb
+  except Exception:
+    logger.error(Exception)
+
+  

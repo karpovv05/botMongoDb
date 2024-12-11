@@ -9,4 +9,4 @@ collection = db["users"]
 
 logger = setup_logger("mongoDb")
 
-collection.delete_many({})
+collection.delete_many({"phone": ["792762953617"]})
