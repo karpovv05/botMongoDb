@@ -121,11 +121,13 @@ def insertBase(jsNewData:dict):
               logger.info(f"insertBase найден Дубль по Телефону")
               tgIdDb = antiDuble(tgIdDb,phoneDb,"phone")
               
-              
-
         if emailNew and emailNew not in tgIdDb["email"]:
               tgIdDb["email"].append(emailNew)
               logger.info(f"insertBase email добавлен")
+              
+              if emailDb and not emailDb["tgId"]:
+                logger.info(f"insertBase найден Дубль по Email")
+                tgIdDb = antiDuble(tgIdDb,emailDb,"email")
               
         collection.update_one({"tgId":tgIdNew},{"$set":tgIdDb})
                   
@@ -137,7 +139,6 @@ def insertBase(jsNewData:dict):
               if not phoneDb["tgId"]:
                 logger.info(f"insertBase Есть новый tgId но нет телефоа. добавлен")
                 phoneDb["tgId"] = tgIdNew
-              #!
               elif phoneDb["tgId"] and emailDb == None:
                 
                 logger.info(f"insertBase Данные по tgId не надены, но телефон есть, Добавлен новый пользователь")   
@@ -272,24 +273,28 @@ def delData():
   
 def antiDuble(tgIdDb,dubleDb,attr):
   try:
-    if attr == "phone":
-      for i in dubleDb.items():
-          if i[1] and i[0] == "getcourse" and i[1]:
-              if i[1]["user_info"]:
-                  tgIdDb["getcourse"]["userInfo"] = i[1]["user_info"]
-              if i[1]["deals"]:
-                  for i2 in i[1]["deals"]:
-                      tgIdDb["getcourse"]["deals"].append(i2)
-          elif i[0] not in ["tgId","phone","email","_id"]:
-            for data in i[1]:
-                  tgIdDb[i[0]].append(data)
-      for phone in dubleDb["phone"]:
+    for i in dubleDb.items():
+        if i[1] and i[0] == "getcourse" and i[1]:
+            if i[1]["user_info"]:
+                tgIdDb["getcourse"]["userInfo"] = i[1]["user_info"]
+            if i[1]["deals"]:
+                for i2 in i[1]["deals"]:
+                    tgIdDb["getcourse"]["deals"].append(i2)
+        elif i[0] not in ["tgId","phone","email","_id"]:
+          for data in i[1]:
+                tgIdDb[i[0]].append(data)
+    for phone in dubleDb["phone"]:
+      if phone not in tgIdDb["phone"]:
         tgIdDb["phone"].append(phone)
-      if dubleDb["email"]:
-        for email in dubleDb["email"]:
-          tgIdDb["email"].append(email) 
-      collection.delete_many({"phone": dubleDb["phone"]})
-      return tgIdDb
+    if dubleDb["email"]:
+      for email in dubleDb["email"]:
+        tgIdDb["email"].append(email) 
+    collection.delete_many({attr: dubleDb[attr]})
+    return tgIdDb
+
+    
+      
+      
   except Exception:
     logger.error(Exception)
 
